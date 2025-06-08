@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BULLOMETER</title>
+    <title>Bullshit Meter</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background: #222; color: white; }
-        #clock-container { position: relative; width: 300px; height: 300px; margin: 20px auto; }
+        #container { display: flex; flex-direction: column; align-items: center; gap: 20px; }
 
-        /* Old clock face */
+        #clock-container { position: relative; width: 300px; height: 300px; }
         #clock-face {
             position: absolute;
             width: 100%;
@@ -22,51 +22,96 @@
             font-size: 24px;
             color: white;
         }
-
-        /* Needle */
-        #needle {
+        #labels {
             position: absolute;
-            width: 6px;
-            height: 100px;
-            background: red;
-            transform-origin: bottom center;
-            bottom: 50%;
-            left: 50%;
-            transform: translateX(-50%) rotate(-45deg);
-            transition: transform 0.3s ease-in-out;
-        }
-
-        /* Overload Light */
-        #overload {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background: red;
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
-            right: 10px;
-            top: 10px;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
+            font-size: 14px;
+            text-align: center;
         }
-
-        .btn { padding: 10px 20px; font-size: 16px; margin: 5px; cursor: pointer; background: white; color: black; border: none; }
+        #low { position: absolute; left: 10%; top: 50%; transform: translateY(-50%); color: green; } /* Green for NO BS */
+        #high { position: absolute; right: 10%; top: 50%; transform: translateY(-50%); color: red; } /* Red for Absolute BS */
+        #needle {
+            position: absolute; width: 6px; height: 100px; background: red; transform-origin: bottom center;
+            bottom: 50%; left: 50%; transform: translateX(-50%) rotate(-45deg); transition: transform 0.3s ease-in-out;
+        }
+        #overload {
+            position: absolute; width: 20px; height: 20px; background: red; border-radius: 50%;
+            right: 10px; top: 10px; opacity: 0; transition: opacity 0.3s ease-in-out;
+        }
+        .btn-container { display: flex; gap: 10px; justify-content: center; }
+        .btn { padding: 5px 10px; font-size: 14px; cursor: pointer; background: white; color: black; border: none; }
+        #stats-container { background: #444; padding: 20px; border-radius: 10px; width: 250px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: center; border-bottom: 1px solid white; }
+        th:contains("BS"), td:contains("BS") { color: red; } /* Make all BS red */
+        th:contains("NO BS"), td:contains("NO BS") { color: green; } /* Make all NO BS green */
     </style>
 </head>
+
+
+
+
+
 <body>
 
-    <h1>Bullshit Meter</h1>
-    <p>Vote if a statement is BS or Not BS.</p>
 
-    <div id="clock-container">
-        <div id="clock-face">0 - 101</div>
-        <div id="needle"></div>
-        <div id="overload"></div>
+
+
+
+
+
+
+<div id="realtime-clock" style="font-size: 24px; color: green; background: transparent;"></div>
+
+<script>
+    function updateClock() {
+        let now = new Date();
+        let timeString = now.toLocaleTimeString();
+        document.getElementById("realtime-clock").textContent = timeString;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+</script>
+
+
+
+
+
+    <h1>BULLOMETER 1.0</h1>
+
+    <div id="container">
+        <div id="clock-container">
+            <div id="clock-face">0 - 101</div>
+            <div id="labels">
+                <div id="low">NO BS</div>
+                <div id="high">Absolute BS</div>
+            </div>
+            <div id="needle"></div>
+            <div id="overload"></div>
+        </div>
+
+        <div class="btn-container">
+            <button class="btn" onclick="vote('not-bs')">✅ NO BS</button>
+            
+            <button class="btn" onclick="resetVotes()">🔄 Reset</button> 
+
+	<button class="btn" onclick="vote('bs')">🛑 BS</button>
+
+<!-- Reset button -->
+        </div>
+
+        <div id="stats-container">
+            <h3>BS Detection Stats</h3>
+            <table>
+                <tr><th>Category</th><th>Votes</th><th>Percentage</th></tr>
+                <tr><td>NO BS</td><td id="not-bs-votes">0</td><td id="not-bs-percent">0%</td></tr>
+                <tr><td>BS</td><td id="bs-votes">0</td><td id="bs-percent">0%</td></tr>
+                <tr><td><b>Total Votes</b></td><td id="total-votes">0</td><td>-</td></tr>
+            </table>
+        </div>
     </div>
-
-    <button class="btn" onclick="vote('bs')">🛑 BS</button>
-    <button class="btn" onclick="vote('not-bs')">✅ Not BS</button>
-
-    <p>Total Votes: <span id="total-votes">0</span></p>
 
     <script>
         let bsVotes = 0;
@@ -76,19 +121,149 @@
             if (type === 'bs') bsVotes++;
             else notBsVotes++;
 
-            let totalVotes = bsVotes + notBsVotes;
-            let bsPercentage = totalVotes ? (bsVotes / totalVotes) * 101 : 50;
+            updateMeter();
+        }
 
-            // Keep needle rotation within bounds (-45° to 45°)
+        function resetVotes() {
+            bsVotes = 0;
+            notBsVotes = 0;
+            updateMeter();
+        }
+
+        function updateMeter() {
+            let totalVotes = bsVotes + notBsVotes;
+            let bsPercentage = totalVotes ? (bsVotes / totalVotes) * 100 : 0;
+            let notBsPercentage = totalVotes ? (notBsVotes / totalVotes) * 100 : 0;
+
             let needleRotation = Math.min(Math.max(-45 + (bsPercentage * 0.9), -45), 45);
             document.getElementById("needle").style.transform = `translateX(-50%) rotate(${needleRotation}deg)`;
-
-            // Toggle overload light if BS > 80%
             document.getElementById("overload").style.opacity = bsPercentage > 80 ? 1 : 0;
 
             document.getElementById("total-votes").textContent = totalVotes;
+            document.getElementById("bs-votes").textContent = bsVotes;
+            document.getElementById("not-bs-votes").textContent = notBsVotes;
+            document.getElementById("bs-percent").textContent = bsPercentage.toFixed(1) + "%";
+            document.getElementById("not-bs-percent").textContent = notBsPercentage.toFixed(1) + "%";
         }
+
     </script>
+
+<br>"New Upgrade - Submit feedback with demographics"</br>
+<br></br>
+<br></br>
+
+<form style="max-width: 300px; margin: auto; background: #555; padding: 15px; border-radius: 10px; color: #B0E0E6;">
+    <label>Name: <input type="text" name="name" required></label><br>
+ <label>Email: <input type="em" name="nm" required></label><br>    
+<label>Phone: <input type="ph" name="nn" required></label><br> 
+<label>Comments: <input type="co" name="cm" required></label><br> 
+
+    <label>Occupation:
+        <select name="occupation">
+            <option value="student">Student</option>
+            <option value="engineer">Engineer</option>
+            <option value="teacher">Teacher</option>
+            <option value="other">Other</option>
+<option value="Entertainer">Entertainer</option>
+<option value="Business">Business</option>
+<option value="Finance">Finance</option>
+<option value="Education">Education</option>
+<option value="Military">Military</option>
+<option value="Un-Employed">Un-Employed</option>
+<option value="Self Employed">Self Employed</option>
+<option value="Health Care">Health Care</option>
+<option value="Cunstruction">Cunstruction</option>
+<option value="Hustler">Hustler</option>
+<option value="Sports Athelete">Sports Athelete</option>
+<option value="Celebrety">Celebrety</option>
+<option value="Computers">Computers</option>
+<option value="Gaming">Gaming</option>
+<option value="Fitness">Fitness</option>
+<option value="Instructor">Instructor</option>
+<option value="Influencer">Influencer</option>
+<option value="Marketing">Marketing</option>
+<option value="Service">Service</option>
+<option value="Warehouse Worker">Warehouse Worker</option>
+<option value="Crew/Staff">Crew/Staff</option>
+<option value="Executive">Executive</option>
+<option value="Command">Command</option>
+<option value="Police">Police</option>
+<option value="Fire">Fire</option>
+
+        </select>
+    </label><br>
+
+    <label>Sex:
+        <select name="sex">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+        </select>
+    </label><br>
+
+    <label>Culture:
+        <select name="Cultural">
+            <option value="African">African</option>
+            <option value="American">American</option>
+            <option value="Native Cherokee">Native Cherokee</option>
+<option value="Native Tiano">Native Tiano</option>
+<option value="Aboriginal">Aboriginal</option>
+<option value="Asian">Asian</option>
+<option value="Saudi Aribian">Saudi Aribian</option>
+<option value="European">European</option>
+<option value="Anglosaxin">Anglosaxin</option>
+<option value="Caribean">Caribean</option>
+<option value="Latino">Latino</option>
+<option value="French">French</option>
+<option value="Dutch">Dutch</option>
+<option value="Omish">Omish</option>
+<option value="Jewish">Jewish</option>
+<option value="Chineese">Chineese</option>
+<option value="Japaneese">Japaneese</option>
+<option value="Korean">Korean</option>
+<option value="Jamacian">Jewish</option>
+<option value="Trinidadian/Tobagonanin">Trinidadian/Tobagonanin</option>
+<option value="Guyaneese">Guyaneese</option>
+<option value="Colombian">Colombian</option>
+<option value="Cuban">Cuban</option>
+<option value="Mexican">Mexican</option>
+<option value="Hatian">Hatian</option>
+<option value="Indian">Indian</option>
+<option value="Canadian">Canadian</option>
+<option value="Alaskian">Alaskian</option>
+<option value="Australian">Australian</option>
+<option value="Hawiian">Hawiian</option>
+
+        </select>
+    </label><br>
+
+
+    <label>Age:
+        <select name="age">
+            <option value="0-5">0-5</option>
+            <option value="6-9">6-9</option>
+            <option value="10-13">10-13</option>
+            <option value="14-17">14-17</option>
+            <option value="18-20">18-20</option>
+            <option value="21-31">21-31</option>
+            <option value="32-44">32-44</option>
+            <option value="45-55">45-54</option>
+	    <option value="56-66">56-66</option>
+	    <option value="67-77">67-77</option>
+            <option value="78-88">78-88</option>
+	    <option value="89-99">89-99</option>
+	    <option value="100+">100+</option>
+
+        </select>
+    </label><br>
+
+    <label>Zip Code: <input type="text" name="zipcode" maxlength="5" required></label><br>
+
+    <button type="submit" style="margin-top: 10px; background: #008080; color: white; padding: 8px; border: none; border-radius: 5px;">Submit</button>
+</form>
+
+
+
 
 </body>
 </html>
